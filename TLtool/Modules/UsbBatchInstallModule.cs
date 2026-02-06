@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using TLTool.Utils;
 
 namespace TLTool.Modules
@@ -11,139 +13,228 @@ namespace TLTool.Modules
     {
         public static void Run()
         {
-            ConsoleHelper.Header("CÀI APP NHANH TỪ Ổ NGOÀI");
+            // Mở cửa sổ console mới để cài app
+            LaunchInNewConsole();
+        }
 
-            Console.WriteLine("Tool sẽ liệt kê các thư mục trong ổ.");
-            Console.WriteLine("Sau khi chọn thư mục → cài silent tất cả .exe/.msi trong đó.\n");
-
-            // Lấy ổ
-            DriveInfo[] drives = DriveInfo.GetDrives();
-            List<DriveInfo> validDrives = drives
-                .Where(d => d.IsReady &&
-                           (d.DriveType == DriveType.Removable ||
-                            d.DriveType == DriveType.CDRom ||
-                            d.DriveType == DriveType.Fixed) &&
-                           d.Name != "C:\\")
-                .ToList();
-
-            if (validDrives.Count == 0)
-            {
-                ConsoleHelper.Error("Không tìm thấy ổ nào phù hợp!");
-                ConsoleHelper.Pause();
-                return;
-            }
-
-            Console.WriteLine("Chọn ổ:");
-            for (int i = 0; i < validDrives.Count; i++)
-            {
-                Console.WriteLine($"  {i + 1}. Ổ {validDrives[i].Name} ({validDrives[i].VolumeLabel})");
-            }
-
-            Console.Write("\nChọn số ổ (0 hủy): ");
-            if (!int.TryParse(Console.ReadLine(), out int driveChoice) || driveChoice == 0 || driveChoice > validDrives.Count)
-            {
-                return;
-            }
-
-            string rootPath = validDrives[driveChoice - 1].RootDirectory.FullName;
-
-            // Liệt kê thư mục con
-            List<string> folders = new List<string>();
+        private static void LaunchInNewConsole()
+        {
             try
             {
-                folders = Directory.GetDirectories(rootPath)
-                    .OrderBy(d => d)
-                    .ToList();
+                // Lấy đường dẫn exe hiện tại
+                string exePath = Process.GetCurrentProcess().MainModule.FileName;
+
+                // Tạo process mới với cửa sổ console riêng
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    Arguments = "--install-apps", // Tham số đặc biệt
+                    UseShellExecute = true, // Mở cửa sổ mới
+                    CreateNoWindow = false
+                };
+
+                Process.Start(psi);
+
+                Console.WriteLine("Đã mở cửa sổ cài đặt riêng!");
+                Console.WriteLine("Bạn có thể tiếp tục dùng tool này bình thường.\n");
             }
             catch (Exception ex)
             {
-                ConsoleHelper.Error("Lỗi đọc ổ: " + ex.Message);
+                ConsoleHelper.Error("Không thể mở cửa sổ mới: " + ex.Message);
                 ConsoleHelper.Pause();
-                return;
             }
+        }
 
-            if (folders.Count == 0)
+        // Hàm này sẽ chạy khi được gọi từ cửa sổ mới
+        public static void RunInNewConsole()
+        {
+            ConsoleHelper.Header("CÀI APP NHANH");
+
+            if (!TryAutoInstall())
+                Environment.Exit(0);
+
+            Console.WriteLine("\nHoàn tất! Cửa sổ sẽ tự động đóng sau 3 giây...");
+            Thread.Sleep(3000);
+            Environment.Exit(0); 
+        }
+
+        // ===== TÌM VÀ XỬ LÝ AUTO KEY =====
+        private static bool TryAutoInstall()
+        {
+            try
             {
-                ConsoleHelper.Warning("Không có thư mục nào trong ổ!");
-                ConsoleHelper.Pause();
-                return;
+                // Quét tất cả ổ ngoài tìm file autoinstall.key
+                DriveInfo[] drives = DriveInfo.GetDrives();
+                foreach (var drive in drives)
+                {
+                    if (!drive.IsReady || drive.Name == "C:\\") continue;
+
+                    string keyFilePath = Path.Combine(drive.RootDirectory.FullName, "autoinstall.key");
+
+                    if (File.Exists(keyFilePath))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"🔑 Tìm thấy file autoinstall.key trong ổ {drive.Name}");
+                        Console.ResetColor();
+
+                        // Đọc nội dung file
+                        string content = File.ReadAllText(keyFilePath).Trim();
+
+                        // Parse: KEY=abc123|FOLDER=MyFolder
+                        var parts = content.Split('|');
+                        if (parts.Length != 2)
+                        {
+                            ConsoleHelper.Warning("Format file key không đúng!");
+                            continue;
+                        }
+
+                        string keyPart = parts[0].Trim();
+                        string pathPart = parts[1].Trim();
+
+                        if (!keyPart.StartsWith("KEY=") || !pathPart.StartsWith("FOLDER="))
+                        {
+                            ConsoleHelper.Warning("Format file key không đúng! Cần: KEY=xxx|FOLDER=yyy");
+                            continue;
+                        }
+
+                        string expectedKey = keyPart.Substring(4).Trim();
+                        string folderName = pathPart.Substring(7).Trim();
+
+                        // Ghép đường dẫn đầy đủ
+                        string targetPath = Path.Combine(drive.RootDirectory.FullName, folderName);
+
+                        // Vòng lặp cho phép nhập lại key
+                        while (true)
+                        {
+                            Console.Write($"\nNhập key để cài tự động (hoặc Enter để thoát): ");
+                            string inputKey = Console.ReadLine()?.Trim();
+
+                            // Nếu người dùng nhấn Enter mà không nhập gì → Thoát
+                            if (string.IsNullOrEmpty(inputKey))
+                            {
+                                ConsoleHelper.Warning("Đã hủy! Nhấn phím bất kỳ để quay lại...");
+                                Console.ReadKey();
+                                return false;
+                            }
+
+                            // Kiểm tra key
+                            if (inputKey != expectedKey)
+                            {
+                                ConsoleHelper.Error("❌ Key không đúng! Vui lòng thử lại.", pause: false);
+                                continue; // Cho nhập lại
+                            }
+
+                            // Key đúng → Kiểm tra folder
+                            if (!Directory.Exists(targetPath))
+                            {
+                                ConsoleHelper.Error($"Folder không tồn tại: {targetPath}");
+                                ConsoleHelper.Warning("Nhấn phím bất kỳ để quay lại...");
+                                Console.ReadKey();
+                                return false;
+                            }
+
+                            // Bắt đầu cài tự động
+                            ConsoleHelper.Success("✅ Key hợp lệ! Bắt đầu cài tự động...\n", pause: false);
+                            System.Threading.Thread.Sleep(1000);
+
+                            InstallFromFolder(targetPath);
+                            return true; // Đã cài xong
+                        }
+                    }
+                }
+
+                // Không tìm thấy file key nào
+                ConsoleHelper.Error("Không tìm thấy file autoinstall.key trong các ổ đĩa!");
+                Console.WriteLine("\nCách sử dụng:");
+                Console.WriteLine("1. Tạo file 'autoinstall.key' ở box");
+                Console.WriteLine("2. Nội dung: KEY=matkhaucuaban|FOLDER=TenFolder");
+                Console.WriteLine("3. Ví dụ: KEY=tlc123|FOLDER=app\n");
+                ConsoleHelper.Warning("Nhấn phím bất kỳ để quay lại...");
+                Console.ReadKey();
             }
-
-            Console.Clear();
-            Console.WriteLine($"Ổ {rootPath} có {folders.Count} thư mục:\n");
-
-            for (int i = 0; i < folders.Count; i++)
+            catch (Exception ex)
             {
-                Console.WriteLine($"  {i + 1}. {Path.GetFileName(folders[i])}");
+                ConsoleHelper.Error("Lỗi đọc auto key: " + ex.Message);
+                ConsoleHelper.Warning("Nhấn phím bất kỳ để quay lại...");
+                Console.ReadKey();
             }
 
-            Console.Write("\nChọn số thư mục để cài (0 hủy): ");
-            if (!int.TryParse(Console.ReadLine(), out int folderChoice) || folderChoice == 0 || folderChoice > folders.Count)
-            {
-                return;
-            }
+            return false; // Không tìm thấy key
+        }
 
-            string selectedFolder = folders[folderChoice - 1];
-
+        private static void InstallFromFolder(string folderPath)
+        {
+            // Quét file .exe/.msi
             List<string> installers = new List<string>();
             try
             {
-                installers.AddRange(SafeEnumerateFiles(selectedFolder, "*.exe"));
-                installers.AddRange(SafeEnumerateFiles(selectedFolder, "*.msi"));
+                installers.AddRange(Directory.GetFiles(folderPath, "*.exe"));
+                installers.AddRange(Directory.GetFiles(folderPath, "*.msi"));
             }
             catch (Exception ex)
             {
-                ConsoleHelper.Warning("Lỗi quét thư mục: " + ex.Message);
+                ConsoleHelper.Error("Lỗi quét folder: " + ex.Message);
+                return;
             }
 
             if (installers.Count == 0)
             {
-                ConsoleHelper.Warning("Không tìm thấy file .exe hoặc .msi trong thư mục này!");
-                ConsoleHelper.Pause();
+                ConsoleHelper.Warning("Không tìm thấy file .exe hoặc .msi trong folder!");
                 return;
             }
 
             Console.Clear();
-            Console.WriteLine($"Tìm thấy {installers.Count} installer trong:");
-            Console.WriteLine($"   {selectedFolder}\n");
-
-            Console.WriteLine("Bắt đầu cài silent (tiến trình thật)...\n");
+            Console.WriteLine($"📁 Folder: {folderPath}");
+            Console.WriteLine($"📦 Tìm thấy {installers.Count} installer\n");
+            Console.WriteLine("Bắt đầu cài SONG SONG (nhanh x3-5 lần)...\n");
 
             int success = 0;
             int total = installers.Count;
+            object lockObj = new object();
 
-            for (int i = 0; i < total; i++)
-            {
-                string file = installers[i];
-                string fileName = Path.GetFileName(file);
+            DateTime startAll = DateTime.Now;
 
-                Console.WriteLine($"[{i + 1}/{total}] {fileName}");
-                Console.WriteLine("  Trạng thái: Đang chạy...");
-
-                bool installed = InstallSilent(file);
-
-                if (installed)
+            // Cài song song tối đa 4 app cùng lúc
+            Parallel.ForEach(installers, new ParallelOptions { MaxDegreeOfParallelism = 2 },
+                (file, state, index) =>
                 {
-                    success++;
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("  Trạng thái: Thành công!");
-                    Console.ResetColor();
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("  Trạng thái: Thất bại hoặc đã cài");
-                    Console.ResetColor();
-                }
+                    string fileName = Path.GetFileName(file);
 
-                Console.WriteLine();
-            }
+                    lock (lockObj)
+                    {
+                        Console.WriteLine($"[{index + 1}/{total}] {fileName}");
+                        Console.WriteLine("  Trạng thái: Đang chạy...");
+                    }
+
+                    DateTime start = DateTime.Now;
+                    bool installed = InstallSilent(file);
+                    TimeSpan duration = DateTime.Now - start;
+
+                    lock (lockObj)
+                    {
+                        if (installed)
+                        {
+                            success++;
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine($"  Trạng thái: Thành công! (Thời gian: {duration.TotalSeconds:F1}s)");
+                            Console.ResetColor();
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"  Trạng thái: Thất bại hoặc đã cài (Thời gian: {duration.TotalSeconds:F1}s)");
+                            Console.ResetColor();
+                        }
+                        Console.WriteLine();
+                    }
+                });
+
+            TimeSpan totalDuration = DateTime.Now - startAll;
 
             ConsoleHelper.Success($"Hoàn tất! Cài thành công {success}/{total} app.");
-            ConsoleHelper.Pause();
+            Console.WriteLine($"Tổng thời gian: {totalDuration.TotalSeconds:F1}s (trung bình {totalDuration.TotalSeconds / total:F1}s/app)");
+            // ===== BỎ DÒNG ConsoleHelper.Pause() Ở ĐÂY =====
         }
-
-        // ... SafeEnumerateFiles giữ nguyên như cũ
 
         private static bool InstallSilent(string filePath)
         {
@@ -156,35 +247,24 @@ namespace TLTool.Modules
                     FileName = filePath,
                     Arguments = arguments,
                     UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    // Bỏ redirect để tăng tốc
+                    RedirectStandardOutput = false,
+                    RedirectStandardError = false
                 };
 
                 using Process process = Process.Start(psi);
 
-                process.OutputDataReceived += (sender, e) =>
-                {
-                    if (!string.IsNullOrEmpty(e.Data))
-                        Console.WriteLine($"  {e.Data}");
-                };
+                // Timeout 2 phút
+                process.WaitForExit(120000);
 
-                process.ErrorDataReceived += (sender, e) =>
-                {
-                    if (!string.IsNullOrEmpty(e.Data))
-                        Console.WriteLine($"  {e.Data}");
-                };
-
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-
-                process.WaitForExit(300000); // Timeout 5 phút
-
-                return process.ExitCode == 0 || process.ExitCode == 3010 || process.ExitCode == 1641; // Các code thành công phổ biến
+                // Exit code 0 = thành công
+                // Exit code 3010 = cần restart
+                // Exit code 1641 = restart đã bắt đầu
+                return process.ExitCode == 0 || process.ExitCode == 3010 || process.ExitCode == 1641;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"  Lỗi: {ex.Message}");
                 return false;
             }
         }
@@ -193,55 +273,48 @@ namespace TLTool.Modules
         {
             string fileName = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
 
+            // MSI files
             if (filePath.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
-                return "/quiet /norestart";
+                return "/qn /norestart ALLUSERS=1";
 
-            string strong = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS";
+            // Zalo - QUAN TRỌNG: /S phải viết HOA
+            if (fileName.Contains("zalo"))
+                return "/S /NCRC";
 
-            if (fileName.Contains("chrome")) return "/silent /install";
-            if (fileName.Contains("firefox")) return "-ms";
-            if (fileName.Contains("coccoc") || fileName.Contains("coc coc")) return "/silent /install";
-            if (fileName.Contains("winrar")) return "/s";
-            if (fileName.Contains("ultraviewer")) return "/VERYSILENT /NORESTART";
+            // Zoom - arguments chuẩn
+            if (fileName.Contains("zoom"))
+                return "/silent /install";
 
-            return strong;
-        }
-        // Hàm quét file an toàn, bỏ qua thư mục bị khóa quyền (System Volume Information, $RECYCLE.BIN...)
-        private static IEnumerable<string> SafeEnumerateFiles(string path, string searchPattern)
-        {
-            Queue<string> queue = new Queue<string>();
-            queue.Enqueue(path);
+            // Cốc Cốc
+            if (fileName.Contains("coccoc") || fileName.Contains("coc coc"))
+                return "/silent /install";
 
-            while (queue.Count > 0)
-            {
-                path = queue.Dequeue();
-                string[] files = null;
-                string[] subDirs = null;
+            // Chrome
+            if (fileName.Contains("chrome"))
+                return "/silent /install";
 
-                try
-                {
-                    files = Directory.GetFiles(path, searchPattern);
-                }
-                catch { /* Bỏ qua lỗi quyền hoặc lỗi khác */ }
+            // WinRAR - /S viết HOA
+            if (fileName.Contains("winrar"))
+                return "/S";
 
-                if (files != null)
-                {
-                    foreach (string file in files)
-                        yield return file;
-                }
+            // UltraViewer
+            if (fileName.Contains("ultraviewer"))
+                return "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-";
 
-                try
-                {
-                    subDirs = Directory.GetDirectories(path);
-                }
-                catch { /* Bỏ qua */ }
+            // Foxit Reader
+            if (fileName.Contains("foxit"))
+                return "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-";
 
-                if (subDirs != null)
-                {
-                    foreach (string subDir in subDirs)
-                        queue.Enqueue(subDir);
-                }
-            }
+            // Unikey
+            if (fileName.Contains("unikey"))
+                return "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-";
+
+            // K-Lite Codec
+            if (fileName.Contains("k-lite") || fileName.Contains("klite"))
+                return "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-";
+
+            // Default cho Inno Setup installers
+            return "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS";
         }
     }
 }

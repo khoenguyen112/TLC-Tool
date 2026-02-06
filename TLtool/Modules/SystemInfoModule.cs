@@ -104,6 +104,16 @@ namespace TLTool.Modules
                 string displayVersion = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "DisplayVersion", "")?.ToString() ?? "";
                 string build = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "CurrentBuild", "")?.ToString() ?? "";
                 string ubr = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "UBR", "")?.ToString() ?? "";
+
+                // Phát hiện Windows 11 dựa trên build number (Windows 11 bắt đầu từ build 22000)
+                if (!string.IsNullOrEmpty(build) && int.TryParse(build, out int buildNumber))
+                {
+                    if (buildNumber >= 22000 && osName.Contains("Windows 10"))
+                    {
+                        osName = osName.Replace("Windows 10", "Windows 11");
+                    }
+                }
+
                 string installDate = "";
 
                 try

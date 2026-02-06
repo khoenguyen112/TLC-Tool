@@ -10,174 +10,174 @@ namespace TLTool.Utils
         private static Random rand = new Random();
 
         // ================= MATRIX INTRO =================
-        public static void MatrixRainIntro()
-        {
-            Console.CursorVisible = false;
-            Console.BackgroundColor = ConsoleColor.Black;
-            Console.Clear();
+//        public static void MatrixRainIntro()
+//        {
+//            Console.CursorVisible = false;
+//            Console.BackgroundColor = ConsoleColor.Black;
+//            Console.Clear();
 
-            int width = Console.WindowWidth - 1;
-            int height = Console.WindowHeight;
+//            int width = Console.WindowWidth - 1;
+//            int height = Console.WindowHeight;
 
-            int[] y = new int[width];
-            for (int i = 0; i < width; i++)
-                y[i] = rand.Next(height);
+//            int[] y = new int[width];
+//            for (int i = 0; i < width; i++)
+//                y[i] = rand.Next(height);
 
-            DateTime start = DateTime.Now;
-            int rainDurationMs = 20000; // 20 giây
+//            DateTime start = DateTime.Now;
+//            int rainDurationMs = 20000; // 20 giây
 
-            while ((DateTime.Now - start).TotalMilliseconds < rainDurationMs)
-            {
-                if (Console.KeyAvailable)
-                {
-                    Console.ReadKey(true);
-                    break;
-                }
+//            while ((DateTime.Now - start).TotalMilliseconds < rainDurationMs)
+//            {
+//                if (Console.KeyAvailable)
+//                {
+//                    Console.ReadKey(true);
+//                    break;
+//                }
 
-                for (int x = 0; x < width; x++)
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.SetCursorPosition(x, y[x]);
-                    Console.Write(MatrixChar());
+//                for (int x = 0; x < width; x++)
+//                {
+//                    Console.ForegroundColor = ConsoleColor.Green;
+//                    Console.SetCursorPosition(x, y[x]);
+//                    Console.Write(MatrixChar());
 
-                    Console.ForegroundColor = ConsoleColor.DarkGreen;
-                    int tail = y[x] - 5;
-                    if (tail >= 0)
-                    {
-                        Console.SetCursorPosition(x, tail);
-                        Console.Write(MatrixChar());
-                    }
+//                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+//                    int tail = y[x] - 5;
+//                    if (tail >= 0)
+//                    {
+//                        Console.SetCursorPosition(x, tail);
+//                        Console.Write(MatrixChar());
+//                    }
 
-                    int clear = y[x] - 20;
-                    if (clear >= 0)
-                    {
-                        Console.SetCursorPosition(x, clear);
-                        Console.Write(' ');
-                    }
+//                    int clear = y[x] - 20;
+//                    if (clear >= 0)
+//                    {
+//                        Console.SetCursorPosition(x, clear);
+//                        Console.Write(' ');
+//                    }
 
-                    y[x]++;
-                    if (y[x] >= height) y[x] = 0;
-                }
+//                    y[x]++;
+//                    if (y[x] >= height) y[x] = 0;
+//                }
 
-                // Cảnh báo ngẫu nhiên
-                if (rand.Next(1000) < 6)
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.SetCursorPosition(rand.Next(width - 20), rand.Next(height));
-                    Console.Write("TRUY CẬP TRÁI PHÉP");
-                }
+//                // Cảnh báo ngẫu nhiên
+//                if (rand.Next(1000) < 6)
+//                {
+//                    Console.ForegroundColor = ConsoleColor.DarkRed;
+//                    Console.SetCursorPosition(rand.Next(width - 20), rand.Next(height));
+//                    Console.Write("TRUY CẬP TRÁI PHÉP");
+//                }
 
-                Thread.Sleep(50);
-            }
+//                Thread.Sleep(50);
+//            }
 
-            Console.Clear();
-            Console.CursorVisible = true;
-            Console.ForegroundColor = ConsoleColor.Green;
-        }
+//            Console.Clear();
+//            Console.CursorVisible = true;
+//            Console.ForegroundColor = ConsoleColor.Green;
+//        }
 
-        static char MatrixChar()
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&";
-            return chars[rand.Next(chars.Length)];
-        }
+//        static char MatrixChar()
+//        {
+//            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&";
+//            return chars[rand.Next(chars.Length)];
+//        }
 
 
-        // ================= LOGO TRUNG TÂM =================
-        public static void HackerWelcome()
-        {
-            Console.Clear();
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Console.ForegroundColor = ConsoleColor.DarkRed;
+//        // ================= LOGO TRUNG TÂM =================
+//        public static void HackerWelcome()
+//        {
+//            Console.Clear();
+//            Console.OutputEncoding = System.Text.Encoding.UTF8;
+//            Console.ForegroundColor = ConsoleColor.DarkRed;
 
-            string asciiArt = @"
- ⠀⠀⠀.o oOOOOOOOo                                            OOOo
-   Ob.OOOOOOOo  OOOo.      oOOo.                      .adOOOOOOO
-   OboO"""""""""""""""""""""""".OOo. .oOOOOOo.    OOOo.oOOOOOo..""""""""""""""""""'OO
-   OOP.oOOOOOOOOOOO ""POOOOOOOOOOOo.   `""OOOOOOOOOP,OOOOOOOOOOOB'
-   `O'OOOO'     `OOOOo""OOOOOOOOOOO` .adOOOOOOOOO""oOOO'    `OOOOo
-   .OOOO'            `OOOOOOOOOOOOOOOOOOOOOOOOOO'            `OO
-   OOOOO                 '""OOOOOOOOOOOOOOOO""`                oOO
-  oOOOOOba.                .adOOOOOOOOOOba               .adOOOOo.
- oOOOOOOOOOOOOOba.    .adOOOOOOOOOO@^OOOOOOOba.     .adOOOOOOOOOOOO
-OOOOOOOOOOOOOOOOO.OOOOOOOOOOOOOO""`  '""OOOOOOOOOOOOO.OOOOOOOOOOOOOO
-""OOOO""       ""YOoOOOOMOIONODOO""`  .   '""OOROAOPOEOOOoOY""     ""OOO""
-   Y           'OOOOOOOOOOOOOO: .oOOo. :OOOOOOOOOOO?'         :`
-   :            .oO%OOOOOOOOOOo.OOOOOO.oOOOOOOOOOOOO?         .
-   .            oOOP""%OOOOOOOOoOOOOOOO?oOOOOO?OOOO""OOo
-                '%o  OOOO""%OOOO%""%OOOOO""OOOOOO""OOO':
-                     `$""  `OOOO' `O""Y ' `OOOO'  o             .
-   .                  .     OP""          : o     .
-                             :
-                             .
+//            string asciiArt = @"
+// ⠀⠀⠀.o oOOOOOOOo                                            OOOo
+//   Ob.OOOOOOOo  OOOo.      oOOo.                      .adOOOOOOO
+//   OboO"""""""""""""""""""""""".OOo. .oOOOOOo.    OOOo.oOOOOOo..""""""""""""""""""'OO
+//   OOP.oOOOOOOOOOOO ""POOOOOOOOOOOo.   `""OOOOOOOOOP,OOOOOOOOOOOB'
+//   `O'OOOO'     `OOOOo""OOOOOOOOOOO` .adOOOOOOOOO""oOOO'    `OOOOo
+//   .OOOO'            `OOOOOOOOOOOOOOOOOOOOOOOOOO'            `OO
+//   OOOOO                 '""OOOOOOOOOOOOOOOO""`                oOO
+//  oOOOOOba.                .adOOOOOOOOOOba               .adOOOOo.
+// oOOOOOOOOOOOOOba.    .adOOOOOOOOOO@^OOOOOOOba.     .adOOOOOOOOOOOO
+//OOOOOOOOOOOOOOOOO.OOOOOOOOOOOOOO""`  '""OOOOOOOOOOOOO.OOOOOOOOOOOOOO
+//""OOOO""       ""YOoOOOOMOIONODOO""`  .   '""OOROAOPOEOOOoOY""     ""OOO""
+//   Y           'OOOOOOOOOOOOOO: .oOOo. :OOOOOOOOOOO?'         :`
+//   :            .oO%OOOOOOOOOOo.OOOOOO.oOOOOOOOOOOOO?         .
+//   .            oOOP""%OOOOOOOOoOOOOOOO?oOOOOO?OOOO""OOo
+//                '%o  OOOO""%OOOO%""%OOOOO""OOOOOO""OOO':
+//                     `$""  `OOOO' `O""Y ' `OOOO'  o             .
+//   .                  .     OP""          : o     .
+//                             :
+//                             .
 
-                 CHÀO MỪNG ĐẾN VỚI TLC TOOL
-";
+//                      CHÀO MỪNG ĐẾN VỚI TLC TOOL
+//";
 
-            string[] lines = asciiArt.Trim().Split('\n');
+//            string[] lines = asciiArt.Trim().Split('\n');
 
-            int topPadding = (Console.WindowHeight - lines.Length) / 2;
-            if (topPadding < 0) topPadding = 0;
+//            int topPadding = (Console.WindowHeight - lines.Length) / 2;
+//            if (topPadding < 0) topPadding = 0;
 
-            for (int i = 0; i < topPadding; i++)
-                Console.WriteLine();
+//            for (int i = 0; i < topPadding; i++)
+//                Console.WriteLine();
 
-            int maxLength = lines.Max(l => l.Length);
-            int leftPadding = (Console.WindowWidth - maxLength) / 2;
-            if (leftPadding < 0) leftPadding = 0;
+//            int maxLength = lines.Max(l => l.Length);
+//            int leftPadding = (Console.WindowWidth - maxLength) / 2;
+//            if (leftPadding < 0) leftPadding = 0;
 
-            foreach (string line in lines)
-                Console.WriteLine(new string(' ', leftPadding) + line);
+//            foreach (string line in lines)
+//                Console.WriteLine(new string(' ', leftPadding) + line);
 
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Beep(600, 200);
-            Console.Beep(900, 200);
-            Console.Beep(1200, 400);
+//            Console.ForegroundColor = ConsoleColor.Red;
+//            Console.Beep(600, 200);
+//            Console.Beep(900, 200);
+//            Console.Beep(1200, 400);
 
-            //Thread.Sleep(3000);
-            DateTime waitStart = DateTime.Now;
-            int waitMs = 5000;
+//            //Thread.Sleep(3000);
+//            DateTime waitStart = DateTime.Now;
+//            int waitMs = 5000;
 
-            while ((DateTime.Now - waitStart).TotalMilliseconds < waitMs)
-            {
-                if (Console.KeyAvailable)
-                {
-                    Console.ReadKey(true);
-                    break;
-                }
-                Thread.Sleep(50);
-            }
+//            while ((DateTime.Now - waitStart).TotalMilliseconds < waitMs)
+//            {
+//                if (Console.KeyAvailable)
+//                {
+//                    Console.ReadKey(true);
+//                    break;
+//                }
+//                Thread.Sleep(50);
+//            }
 
-        }
+//        }
 
-        // ================= GÕ CHẬM KIỂU HACKER =================
-        public static void SlowType(string text, int delay = 50)
-        {
-            foreach (char c in text)
-            {
-                Console.Write(c);
-                Thread.Sleep(delay);
-                if (rand.Next(10) < 2)
-                    Console.Beep(700 + rand.Next(300), 20);
-            }
-            Console.WriteLine();
-        }
+//        // ================= GÕ CHẬM KIỂU HACKER =================
+//        public static void SlowType(string text, int delay = 50)
+//        {
+//            foreach (char c in text)
+//            {
+//                Console.Write(c);
+//                Thread.Sleep(delay);
+//                if (rand.Next(10) < 2)
+//                    Console.Beep(700 + rand.Next(300), 20);
+//            }
+//            Console.WriteLine();
+//        }
 
-        // ================= THANH GIẢ TIẾN TRÌNH =================
-        public static void FakeProgress(string action)
-        {
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine(action);
+//        // ================= THANH GIẢ TIẾN TRÌNH =================
+//        public static void FakeProgress(string action)
+//        {
+//            Console.ForegroundColor = ConsoleColor.DarkRed;
+//            Console.WriteLine(action);
 
-            for (int i = 0; i <= 100; i += rand.Next(5, 12))
-            {
-                Console.Write($"\r{action} [{new string('#', i / 5)}{new string(' ', 20 - i / 5)}] {i}%");
-                Thread.Sleep(rand.Next(80, 150));
-            }
+//            for (int i = 0; i <= 100; i += rand.Next(5, 12))
+//            {
+//                Console.Write($"\r{action} [{new string('#', i / 5)}{new string(' ', 20 - i / 5)}] {i}%");
+//                Thread.Sleep(rand.Next(80, 150));
+//            }
 
-            Console.WriteLine($"\r{action} [####################] 100% HOÀN TẤT");
-            Console.Beep(2000, 400);
-            Console.ResetColor();
-        }
+//            Console.WriteLine($"\r{action} [####################] 100% HOÀN TẤT");
+//            Console.Beep(2000, 400);
+//            Console.ResetColor();
+//        }
 
         // ================= MENU CHÍNH =================
         public static void ShowMainMenu(bool isPremium = false)
@@ -239,9 +239,9 @@ OOOOOOOOOOOOOOOOO.OOOOOOOOOOOOOO""`  '""OOOOOOOOOOOOO.OOOOOOOOOOOOOO
             Console.WriteLine("[7] Cài app nhanh offline");
 
 
-            Console.SetCursorPosition(left, Console.CursorTop);
-            Console.WriteLine("[8] Cài app nhanh online");
-            Console.WriteLine();
+            //Console.SetCursorPosition(left, Console.CursorTop);
+            //Console.WriteLine("[8] Cài app nhanh online");
+            //Console.WriteLine();
 
             Console.ForegroundColor = ConsoleColor.DarkRed;
             Console.SetCursorPosition(left, Console.CursorTop);
@@ -306,20 +306,24 @@ OOOOOOOOOOOOOOOOO.OOOOOOOOOOOOOO""`  '""OOOOOOOOOOOOO.OOOOOOOOOOOOOO
             Console.ResetColor();
         }
 
-        public static void Success(string text)
+        public static void Success(string text, bool pause = true)
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine(text);
             Console.ResetColor();
-            Pause();
+
+            if (pause)
+                Pause();
         }
 
-        public static void Error(string text)
+        public static void Error(string text, bool pause = true)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(text);
             Console.ResetColor();
-            Pause();
+
+            if (pause)
+                Pause();
         }
 
         public static void Warning(string text)

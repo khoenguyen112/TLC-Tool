@@ -15,15 +15,14 @@
 
   <ItemGroup>
     <None Remove="favicon.ico" />
-    <None Remove="Packages\coccoc.131.0.0.nupkg" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="favicon.ico" />
-    <EmbeddedResource Include="Packages\coccoc.131.0.0.nupkg" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.4.1" />
     <PackageReference Include="System.Management" Version="10.0.1" />
   </ItemGroup>
 
@@ -31,6 +30,10 @@
     <None Update="Switch Hitter.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Packages\" />
   </ItemGroup>
 
 </Project>
